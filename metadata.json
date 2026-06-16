@@ -1,0 +1,6 @@
+{
+  "name": "Pool Trading Portal",
+  "description": "A pool trading and investment platform offering several investment packages with mobile money payment and screenshot proof upload.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

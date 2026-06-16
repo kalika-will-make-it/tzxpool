@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Auth tokens
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email == 'glenkalika005@gmail.com');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUser(data) {
+      return data.uid is string &&
+             data.email is string &&
+             data.name is string && data.name.size() > 0 &&
+             data.phone is string && data.phone.size() > 0 &&
+             data.balanceUSD is number &&
+             data.totalWithdrawn is number &&
+             data.createdAt is number;
+    }
+
+    function isValidInvestment(data) {
+      return data.id is string &&
+             data.userId is string &&
+             data.packageId is string &&
+             data.investAmount is number &&
+             data.returnAmount is number &&
+             data.durationDays is number &&
+             data.timestamp is number &&
+             data.status is string &&
+             data.transactionId is string &&
+             data.senderPhone is string &&
+             data.senderName is string &&
+             data.screenshotUrl is string;
+    }
+
+    function isValidWithdrawal(data) {
+      return data.id is string &&
+             data.userId is string &&
+             data.amountUSD is number &&
+             data.phone is string &&
+             data.network is string &&
+             data.timestamp is number &&
+             data.status is string;
+    }
+
+    function isValidNotification(data) {
+      return data.id is string &&
+             data.userId is string &&
+             data.title is string &&
+             data.message is string &&
+             data.type is string &&
+             data.timestamp is number &&
+             data.read is bool;
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if (isOwner(userId) && isValidUser(incoming())) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /investments/{investmentId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin() || !resource.data.keys().hasAll(['userId']));
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidInvestment(incoming());
+      allow update: if isSignedIn() && (incoming().userId == request.auth.uid || isAdmin()) && isValidInvestment(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /withdrawals/{withdrawalId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin() || !resource.data.keys().hasAll(['userId']));
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidWithdrawal(incoming());
+      allow update: if isSignedIn() && (incoming().userId == request.auth.uid || isAdmin()) && isValidWithdrawal(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin() || !resource.data.keys().hasAll(['userId']));
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidNotification(incoming());
+      allow update: if isSignedIn() && (incoming().userId == request.auth.uid || isAdmin()) && isValidNotification(incoming());
+      allow delete: if isAdmin();
+    }
+  }
+}
