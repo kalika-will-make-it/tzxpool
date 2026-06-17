@@ -8,6 +8,7 @@ import { PortfolioViewer } from './components/PortfolioViewer';
 import { AdminPanel } from './components/AdminPanel';
 import { YieldCalculator } from './components/YieldCalculator';
 import { WithdrawModal } from './components/WithdrawModal';
+import { AdminPinChallengeModal } from './components/AdminPinChallengeModal';
 import { formatUSD, formatKES, formatDateTime } from './utils';
 import { auth } from './firebase';
 import {
@@ -74,6 +75,8 @@ export default function App() {
   const [selectedPackage, setSelectedPackage] = useState<InvestmentPackage | null>(null);
   const [showWithdraw, setShowWithdraw] = useState<boolean>(false);
   const [showAdmin, setShowAdmin] = useState<boolean>(false);
+  const [showAdminPinChallenge, setShowAdminPinChallenge] = useState<boolean>(false);
+  const [adminUnlocked, setAdminUnlocked] = useState<boolean>(false);
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
   const [faqOpenIdx, setFaqOpenIdx] = useState<number | null>(0);
 
@@ -526,6 +529,16 @@ export default function App() {
     .filter((i) => i.status === 'matured')
     .reduce((sum, current) => sum + current.returnAmount, 0);
 
+  const handleOpenAdmin = () => {
+    if (showAdmin) {
+      setShowAdmin(false);
+    } else if (adminUnlocked) {
+      setShowAdmin(true);
+    } else {
+      setShowAdminPinChallenge(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#050505] text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
       {/* 1. Header Bar component */}
@@ -533,7 +546,7 @@ export default function App() {
         user={user}
         notifications={notifications}
         onOpenNotifications={() => setShowNotifications(!showNotifications)}
-        onOpenAdmin={() => setShowAdmin(!showAdmin)}
+        onOpenAdmin={handleOpenAdmin}
         onLogout={handleLogout}
         isAdminMode={showAdmin}
         hasPendingInvestments={pendingAuditsCount > 0}
@@ -557,7 +570,7 @@ export default function App() {
             </div>
           </div>
           <button
-            onClick={() => setShowAdmin(true)}
+            onClick={handleOpenAdmin}
             className="w-full sm:w-auto px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white rounded-xl text-xs font-semibold tracking-wide border border-white/10 transition"
           >
             Launch Sandbox Panel &rarr;
@@ -1052,6 +1065,19 @@ export default function App() {
           withdrawals={withdrawals}
           onApproveWithdraw={handleApproveWithdraw}
           onRejectWithdraw={handleRejectWithdraw}
+        />
+      )}
+
+      {/* Admin PIN Challenge Modal overlay */}
+      {showAdminPinChallenge && (
+        <AdminPinChallengeModal
+          onClose={() => setShowAdminPinChallenge(false)}
+          onSuccess={() => {
+            setShowAdminPinChallenge(false);
+            setAdminUnlocked(true);
+            setShowAdmin(true);
+          }}
+          correctPin="42537066"
         />
       )}
 
