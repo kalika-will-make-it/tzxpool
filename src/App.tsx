@@ -212,6 +212,8 @@ export default function App() {
       console.error('Authentication event error:', err);
       if (err.code === 'auth/email-already-in-use') {
         setRegError('This email is already registered. Please choose login instead.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setRegError("Email/Password Sign-In Provider is disabled in your Firebase console. Please go to your Firebase project console -> Authentication -> Sign-in Method tab, and enable the 'Email/Password' provider.");
       } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
         setRegError('Wrong email or password.');
       } else if (err.code === 'auth/invalid-email') {
